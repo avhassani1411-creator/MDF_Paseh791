@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+<meta charset="utf-8" />
+<title>📦 سیستم انبار MDF Paseh — نسخه نهایی</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+  :root{--bg:#071022;--panel:#0f1724;--accent:#2b6cb0;--muted:#9aa4b2;--text:#e6eef6}
+  body{font-family:Tahoma, sans-serif;direction:rtl;margin:0;padding:18px;background:linear-gradient(180deg,#071022 0%, #0b1220 100%);color:var(--text)}
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+  h1{margin:0;font-size:18px}
+  nav a{margin:0 6px;color:#fff;text-decoration:none;cursor:pointer;padding:6px 10px;border-radius:6px;display:inline-block}
+  nav a:hover{background:rgba(255,255,255,0.03)}
+  .card{background:var(--panel);border:1px solid rgba(255,255,255,0.04);border-radius:8px;padding:12px;margin-bottom:12px;box-shadow:0 6px 18px rgba(2,6,23,0.6)}
+  table{width:100%;border-collapse:collapse;margin-top:8px}
+  th,td{border:1px solid rgba(255,255,255,0.03);padding:8px;text-align:center;font-size:13px;color:var(--text)}
+  th{background:#071124;color:var(--muted);font-weight:600}
+  input,select,textarea,button{padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,0.04);background:#0b1220;color:var(--text);min-width:120px}
+  button{cursor:pointer;background:var(--accent);border-color:var(--accent);color:#fff}
+  button.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+  .small{padding:6px 8px;font-size:12px}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .muted{color:var(--muted);font-size:13px}
+  .note{color:#aab3bf;font-size:12px;margin-top:6px}
+  @media (max-width:800px){ .row{flex-direction:column;align-items:stretch} input,select{width:100%} }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>📦 سیستم انبار MDF Paseh — نسخهٔ نهایی</h1>
+    <div class="muted">داده‌ها در مرورگر (localStorage) ذخیره می‌شوند — قبل از تغییرات مهم بکاپ بگیر.</div>
+  </div>
+  <nav>
+    <a onclick="showTab('customers')">👤 مشتری‌ها</a>
+    <a onclick="showTab('products')">📋 کالاها</a>
+    <a onclick="showTab('factors')">🧾 فاکتورها</a>
+    <a onclick="showTab('transactions')">📑 ورود/خروج</a>
+    <a onclick="showTab('invoice')">🧾 صورتحساب</a>
+    <a onclick="showTab('report')">📊 گزارش</a>
+    <a onclick="backup()" title="دانلود پشتیبان JSON">💾 دانلود پشتیبان</a>
+    <a onclick="triggerUpload()">📤 بارگذاری بکاپ</a>
+    <input type="file" id="fileInput" accept="application/json" style="display:none" />
+  </nav>
+</header>
+
+<!-- مشتری‌ها -->
+<section id="customers" class="card">
+  <h3>👤 مدیریت مشتری‌ها</h3>
+  <div class="row">
+    <input id="custName" placeholder="نام مشتری (اجباری)" />
+    <input id="custPhone" placeholder="تلفن" />
+    <button id="btnAddCustomer">➕ افزودن</button>
+    <button id="btnClearCustomers" class="ghost small">پاک‌سازی همه</button>
+  </div>
+  <div style="margin-top:10px">
+    <table id="tblCustomers">
+      <thead><tr><th>#</th><th>نام</th><th>تلفن</th><th>عملیات</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- کالاها -->
+<section id="products" class="card" style="display:none">
+  <h3>📋 مدیریت کالاها (برند و کد جنس)</h3>
+  <div class="row">
+    <input id="prodBrand" placeholder="برند / جنس (اجباری)" />
+    <input id="prodCode" placeholder="کد جنس (اجباری)" />
+    <button id="btnAddProduct">➕ افزودن / بروزرسانی</button>
+    <button id="btnClearProducts" class="ghost small">پاک‌سازی همه</button>
+  </div>
+  <div style="margin-top:10px">
+    <table id="tblProducts">
+      <thead><tr><th>#</th><th>برند / جنس</th><th>کد جنس</th><th>عملیات</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  <div class="note">اگر کد جنس تکراری باشد، مشخصات بروزرسانی می‌شود.</div>
+</section>
+
+<!-- فاکتورها -->
+<section id="factors" class="card" style="display:none">
+  <h3>🧾 مدیریت فاکتورها (هر فاکتور متعلق به یک مشتری)</h3>
+  <div class="row">
+    <select id="factorCust"><option value="">— انتخاب مشتری —</option></select>
+    <input id="factorNote" placeholder="نام / شماره فاکتور" style="min-width:220px" />
+    <button id="btnNewFactor">➕ افزودن فاکتور</button>
+    <button id="btnClearFactors" class="ghost small">پاک‌سازی فاکتورها</button>
+  </div>
+  <div style="margin-top:10px">
+    <table id="tblFactors">
+      <thead><tr><th>#</th><th>مشتری</th><th>نام فاکتور</th><th>عملیات</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- تراکنش‌ها -->
+<section id="transactions" class="card" style="display:none">
+  <h3>📑 ثبت سند ورود / خروج (انتخاب فاکتور الزامی)</h3>
+  <div class="row">
+    <select id="trCustomer"><option value="">— انتخاب مشتری —</option></select>
+    <select id="trFactor"><option value="">— انتخاب فاکتور (مربوط به مشتری) —</option></select>
+    <select id="trProduct"><option value="">— انتخاب کالا —</option></select>
+    <input id="trQty" type="number" placeholder="تعداد (برگ)" style="width:120px" />
+    <select id="trType"><option value="IN">ورود</option><option value="OUT">خروج</option></select>
+    <input id="trNote" placeholder="توضیحات (اختیاری)" style="min-width:180px" />
+    <button id="btnAddTr">ثبت</button>
+    <button id="btnCancelEdit" class="ghost small" style="display:none">انصراف</button>
+  </div>
+
+  <div style="margin-top:12px">
+    <table id="tblTransactions">
+      <thead><tr><th>#</th><th>فاکتور</th><th>تاریخ</th><th>مشتری</th><th>کالا</th><th>تعداد</th><th>نوع</th><th>توضیحات</th><th>عملیات</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  <div class="note">خروج فقط از موجودی همان فاکتور مجاز است—در صورت کمبود، ثبت انجام نمی‌شود.</div>
+</section>
+
+<!-- صورتحساب -->
+<section id="invoice" class="card" style="display:none">
+  <h3>🧾 صورتحساب / حساب مشتری</h3>
+  <div class="row">
+    <select id="invCustomer"><option value="">— انتخاب مشتری —</option></select>
+    <select id="invFactor"><option value="">— همه فاکتورها —</option></select>
+    <button id="btnRefreshInv" class="ghost small">رفرش</button>
+  </div>
+
+  <h4 style="margin-top:12px">خلاصهٔ موجودی برای: <span id="invCustName" class="muted"></span></h4>
+  <table id="tblInvSummary"><thead><tr><th>#</th><th>فاکتور</th><th>کد جنس</th><th>برند / جنس</th><th>موجودی (برگ)</th></tr></thead><tbody></tbody></table>
+
+  <h4 style="margin-top:12px">لیست تراکنش‌ها</h4>
+  <table id="tblInvTransactions"><thead><tr><th>#</th><th>فاکتور</th><th>تاریخ</th><th>نوع</th><th>کالا</th><th>تعداد</th><th>توضیحات</th></tr></thead><tbody></tbody></table>
+</section>
+
+<!-- گزارش -->
+<section id="report" class="card" style="display:none">
+  <h3>📊 گزارش کلی موجودی (تجمع بر اساس کد جنس)</h3>
+  <table id="tblReport"><thead><tr><th>#</th><th>کد جنس</th><th>برند / جنس</th><th>موجودی کل (برگ)</th></tr></thead><tbody></tbody></table>
+</section>
+
+<script>
+/* ===== STORAGE HELPERS ===== */
+const S = {
+  load: (k, def=[]) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch(e){ return def; } },
+  save: (k, v) => localStorage.setItem(k, JSON.stringify(v))
+};
+
+/* ===== INITIAL LOAD (preserve any existing data) ===== */
+let customers = S.load('customers', []);
+let products = S.load('products', []); // {id, brand, code}
+let factors = S.load('factors', []);   // {id, customerId, name}
+let transactions = S.load('transactions', []); // {id, customerId?, productId?, productCode?, factorId?, qty, type, date, note, customerName?}
+
+/* ===== MIGRATION: try to handle older shapes safely ===== */
+function migrate(){
+  let changed = false;
+
+  // If old product shapes exist (e.g., had len/wid/thick), keep code/brand clean
+  products = products.map(p=>{
+    if(!p) return p;
+    // ensure id
+    const id = p.id ?? nextId(products);
+    const brand = p.brand ?? p.name ?? '';
+    const code = p.code ?? (p.id ? String(p.id) : (p.productCode || ''));
+    return { id, brand, code };
+  });
+
+  // If factors missing (older systems might not have had them), keep as is (empty)
+  // Migrate transactions: ensure date exists and try to map productCode/customerName to ids
+  transactions.forEach(t=>{
+    if(!t) return;
+    if(!t.date){ t.date = new Date().toISOString(); changed = true; }
+    // product mapping
+    if(!t.productId && (t.productCode || t.product)){
+      const code = t.productCode || t.product;
+      const found = products.find(p=>p.code === code);
+      if(found){ t.productId = found.id; changed = true; }
+      else { t.productCode = code; } // keep as-is
+    }
+    // customer mapping
+    if(!t.customerId && (t.customerName || t.customer)){
+      const name = t.customerName || t.customer;
+      const found = customers.find(c=>c.name === name);
+      if(found){ t.customerId = found.id; changed = true; }
+      else { t.customerName = name; }
+    }
+    // factorId may be missing; if invoice-like string exists in t.invoice, we can create a factor?
+    // We will NOT auto-create factors to avoid phantom data; leave t.factorId or t.factorName.
+  });
+
+  if(changed) saveAll();
+}
+migrate();
+
+/* ===== UTIL ===== */
+function saveAll(){ S.save('customers', customers); S.save('products', products); S.save('factors', factors); S.save('transactions', transactions); }
+function el(id){ return document.getElementById(id); }
+function nextId(arr){ return arr.length ? Math.max(...arr.map(x=>x.id||0))+1 : 1; }
+function escapeHtml(s){ if(s===0) return '0'; if(!s) return ''; return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+function formatDate(iso){ try{ return new Date(iso).toLocaleString('fa-IR'); }catch(e){ return iso||''; } }
+
+/* ===== RENDERS / FILLERS ===== */
+function fillCustomerSelects(){
+  const opts = ['<option value="">— انتخاب مشتری —</option>'].concat(customers.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`)).join('');
+  el('trCustomer').innerHTML = opts;
+  el('factorCust').innerHTML = ['<option value="">— انتخاب مشتری —</option>'].concat(customers.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`)).join('');
+  el('invCustomer').innerHTML = ['<option value="">— انتخاب مشتری —</option>'].concat(customers.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`)).join('');
+}
+function fillProductSelect(){
+  const opts = ['<option value="">— انتخاب کالا —</option>'].concat(products.map(p=>`<option value="${p.id}">${escapeHtml(p.brand)} | ${escapeHtml(p.code)}</option>`)).join('');
+  el('trProduct').innerHTML = opts;
+}
+function fillFactorSelectForCustomer(customerId, targetSelectId){
+  const sel = el(targetSelectId);
+  if(!sel) return;
+  const opts = ['<option value="">— انتخاب فاکتور —</option>']
+    .concat(factors.filter(f=>f.customerId === customerId).map(f=>`<option value="${f.id}">${escapeHtml(f.name)}</option>`)).join('');
+  sel.innerHTML = opts;
+}
+function renderCustomers(){
+  const tbody = el('tblCustomers').querySelector('tbody');
+  if(!customers.length){ tbody.innerHTML = '<tr><td colspan="4" class="muted">مشتری‌ای ثبت نشده است.</td></tr>'; return; }
+  tbody.innerHTML = customers.map((c,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(c.name)}</td><td>${escapeHtml(c.phone||'')}</td><td><button class="small ghost" onclick="editCustomer(${i})">✏️</button> <button class="small" onclick="deleteCustomer(${i})">❌</button></td></tr>`).join('');
+}
+function renderProducts(){
+  const tbody = el('tblProducts').querySelector('tbody');
+  if(!products.length){ tbody.innerHTML = '<tr><td colspan="4" class="muted">کالا ثبت نشده است.</td></tr>'; return; }
+  tbody.innerHTML = products.map((p,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(p.brand)}</td><td>${escapeHtml(p.code)}</td><td><button class="small ghost" onclick="editProduct(${i})">✏️</button> <button class="small" onclick="deleteProduct(${i})">❌</button></td></tr>`).join('');
+}
+function renderFactors(){
+  const tbody = el('tblFactors').querySelector('tbody');
+  if(!factors.length){ tbody.innerHTML = '<tr><td colspan="4" class="muted">فاکتوری ثبت نشده است.</td></tr>'; return; }
+  tbody.innerHTML = factors.map((f,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(customers.find(c=>c.id===f.customerId)?.name||'')}</td><td>${escapeHtml(f.name)}</td><td><button class="small ghost" onclick="editFactor(${i})">✏️</button> <button class="small" onclick="deleteFactor(${i})">❌</button></td></tr>`).join('');
+}
+function renderTransactions(){
+  const tbody = el('tblTransactions').querySelector('tbody');
+  if(!transactions.length){ tbody.innerHTML = '<tr><td colspan="9" class="muted">تراکنشی ثبت نشده است.</td></tr>'; return; }
+  tbody.innerHTML = transactions.map((t,i)=>{
+    const f = factors.find(x=>x.id===t.factorId);
+    const cust = customers.find(x=>x.id===t.customerId) || {};
+    const prod = products.find(x=>x.id===t.productId) || {};
+    return `<tr>
+      <td>${i+1}</td>
+      <td>${escapeHtml(f? f.name : (t.factorName||''))}</td>
+      <td>${formatDate(t.date)}</td>
+      <td>${escapeHtml(cust.name||t.customerName||'')}</td>
+      <td>${escapeHtml(prod.code || t.productCode || '')}</td>
+      <td>${t.qty}</td>
+      <td>${t.type}</td>
+      <td>${escapeHtml(t.note||'')}</td>
+      <td><button class="small ghost" onclick="startEditTransaction(${i})">✏️</button> <button class="small" onclick="deleteTransaction(${i})">❌</button></td>
+    </tr>`;
+  }).join('');
+}
+function renderInvFactorOptions(){
+  const custId = Number(el('invCustomer').value) || null;
+  const optsAll = ['<option value="">— همه فاکتورها —</option>'].concat(factors.filter(f=> !custId || f.customerId===custId).map(f=>`<option value="${f.id}">${escapeHtml(f.name)}</option>`)).join('');
+  el('invFactor').innerHTML = optsAll;
+}
+function renderReport(){
+  const map = new Map();
+  transactions.forEach(t=>{
+    const code = (t.productId && products.find(p=>p.id===t.productId)?.code) || t.productCode || '';
+    const p = products.find(x=>x.code===code);
+    const delta = (t.type==='OUT') ? -Number(t.qty) : Number(t.qty);
+    if(!map.has(code)) map.set(code, {code, brand: p?.brand||'', qty:0});
+    map.get(code).qty += delta;
+  });
+  const tbody = el('tblReport').querySelector('tbody');
+  if(map.size===0){ tbody.innerHTML = '<tr><td colspan="4" class="muted">هنوز داده‌ای ثبت نشده است.</td></tr>'; return; }
+  tbody.innerHTML = Array.from(map.values()).map((r,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(r.code)}</td><td>${escapeHtml(r.brand)}</td><td>${r.qty}</td></tr>`).join('');
+}
+
+/* ===== INVENTORY CHECK ===== */
+function availableQtyForFactorProduct(factorId, productId, ignoreIndex=null){
+  let sum = 0;
+  transactions.forEach((t, idx)=>{
+    if(idx === ignoreIndex) return;
+    if(t.factorId != factorId) return;
+    const sameProd = (t.productId ? t.productId == productId : (t.productCode && products.find(p=>p.id==productId && p.code==t.productCode)));
+    if(!sameProd) return;
+    sum += (t.type === 'OUT' ? -Number(t.qty) : Number(t.qty));
+  });
+  return sum;
+}
+
+/* ===== CRUD: Customers ===== */
+el('btnAddCustomer').onclick = ()=>{
+  const name = el('custName').value.trim();
+  if(!name){ alert('نام مشتری الزامی است'); return; }
+  const phone = el('custPhone').value.trim();
+  customers.push({ id: nextId(customers), name, phone });
+  saveAll(); renderAll();
+  el('custName').value=''; el('custPhone').value='';
+};
+function editCustomer(i){
+  const c = customers[i];
+  const newName = prompt('نام مشتری:', c.name); if(newName === null) return;
+  const newPhone = prompt('تلفن:', c.phone||'') || '';
+  if(!newName.trim()){ alert('نام نمی‌تواند خالی باشد'); return; }
+  customers[i].name = newName.trim(); customers[i].phone = newPhone.trim();
+  saveAll(); renderAll();
+}
+function deleteCustomer(i){
+  if(!confirm('آیا مطمئن هستید مشتری حذف شود؟ تراکنش‌های مرتبط به نام مشتری تبدیل می‌شوند.')) return;
+  const cid = customers[i].id;
+  customers.splice(i,1);
+  transactions.forEach(t=>{ if(t.customerId == cid){ t.customerName = customers.find(c=>c.id==cid)?.name || t.customerName || ''; delete t.customerId; }});
+  factors = factors.filter(f=>f.customerId !== cid);
+  saveAll(); renderAll();
+}
+el('btnClearCustomers').onclick = ()=>{ if(confirm('آیا همهٔ مشتریان حذف شوند؟')){ customers=[]; saveAll(); renderAll(); } };
+
+/* ===== CRUD: Products ===== */
+el('btnAddProduct').onclick = ()=>{
+  const brand = el('prodBrand').value.trim();
+  const code = el('prodCode').value.trim();
+  if(!brand){ alert('برند / جنس الزامی است'); return; }
+  if(!code){ alert('کد جنس الزامی است'); return; }
+  const existing = products.find(p=>p.code === code);
+  if(existing){
+    if(!confirm('کد جنس تکراری است — مشخصات بروزرسانی شود؟')) return;
+    existing.brand = brand;
+    saveAll(); renderAll();
+    el('prodBrand').value=''; el('prodCode').value='';
+    return;
+  }
+  products.push({ id: nextId(products), brand, code });
+  saveAll(); renderAll();
+  el('prodBrand').value=''; el('prodCode').value='';
+};
+function editProduct(i){
+  const p = products[i];
+  const newBrand = prompt('برند / جنس:', p.brand) || p.brand;
+  const newCode = prompt('کد جنس:', p.code) || p.code;
+  if(!newBrand.trim()){ alert('برند نمی‌تواند خالی باشد'); return; }
+  if(!newCode.trim()){ alert('کد نمی‌تواند خالی باشد'); return; }
+  if(newCode !== p.code && products.some((x,idx)=>x.code===newCode && idx!==i)){ alert('محصول با این کد وجود دارد'); return; }
+  p.brand = newBrand.trim(); p.code = newCode.trim();
+  saveAll(); renderAll();
+}
+function deleteProduct(i){
+  if(!confirm('آیا مطمئن هستید این کالا حذف شود؟ تراکنش‌های مرتبط کد جنس را نگه می‌دارند.')) return;
+  const pid = products[i].id;
+  products.splice(i,1);
+  transactions.forEach(t=>{ if(t.productId == pid){ t.productCode = products.find(p=>p.id==pid)?.code || t.productCode || ''; delete t.productId; }});
+  saveAll(); renderAll();
+}
+el('btnClearProducts').onclick = ()=>{ if(confirm('آیا همهٔ کالاها حذف شوند؟')){ products=[]; saveAll(); renderAll(); } };
+
+/* ===== CRUD: Factors ===== */
+el('btnNewFactor').onclick = ()=>{
+  const custId = Number(el('factorCust').value) || null;
+  const name = el('factorNote').value.trim();
+  if(!custId){ alert('ابتدا مشتری را انتخاب کنید'); return; }
+  if(!name){ alert('نام فاکتور الزامی است'); return; }
+  factors.push({ id: nextId(factors), customerId: custId, name });
+  saveAll(); renderAll(); el('factorNote').value='';
+};
+function editFactor(i){
+  const f = factors[i];
+  const newName = prompt('نام فاکتور:', f.name); if(newName === null) return;
+  if(!newName.trim()){ alert('نام فاکتور نمی‌تواند خالی باشد'); return; }
+  factors[i].name = newName.trim(); saveAll(); renderAll();
+}
+function deleteFactor(i){
+  if(!confirm('آیا این فاکتور حذف شود؟ تراکنش‌های مرتبط factorId خود را از دست می‌دهند اما باقی می‌مانند.')) return;
+  const fid = factors[i].id;
+  factors.splice(i,1);
+  transactions.forEach(t=>{ if(t.factorId == fid){ t.factorName = t.factorName || ''; delete t.factorId; }});
+  saveAll(); renderAll();
+}
+el('btnClearFactors').onclick = ()=>{ if(confirm('آیا همهٔ فاکتورها حذف شوند؟')){ factors=[]; saveAll(); renderAll(); } };
+
+/* ===== TRANSACTIONS (ADD / EDIT / DELETE) ===== */
+let editingTransactionIndex = null;
+el('btnAddTr').onclick = ()=>{
+  const custId = Number(el('trCustomer').value) || null;
+  const factorId = Number(el('trFactor').value) || null;
+  const prodId = Number(el('trProduct').value) || null;
+  const qty = Number(el('trQty').value || 0);
+  const type = el('trType').value;
+  const note = el('trNote').value.trim();
+
+  if(!custId){ alert('مشتری را انتخاب کنید'); return; }
+  if(!factorId){ alert('فاکتور را انتخاب کنید'); return; }
+  if(!prodId){ alert('کالا را انتخاب کنید'); return; }
+  if(!qty || qty <= 0){ alert('تعداد معتبر وارد کنید'); return; }
+
+  // For OUT: check available quantity in that factor for that product (exclude editing index)
+  const avail = availableQtyForFactorProduct(factorId, prodId, editingTransactionIndex);
+  if(type === 'OUT' && (avail - qty) < 0){
+    alert('موجودی کافی در این فاکتور وجود ندارد. موجودی فعلی: ' + avail + ' برگ');
+    return;
+  }
+
+  // Merge rule: if adding a new transaction and an existing transaction exists with same (customerId,factorId,productId,type)
+  if(editingTransactionIndex === null){
+    const sameIdx = transactions.findIndex(t => t.customerId==custId && t.factorId==factorId && t.productId==prodId && t.type===type);
+    if(sameIdx !== -1){
+      transactions[sameIdx].qty = Number(transactions[sameIdx].qty) + qty;
+      transactions[sameIdx].date = new Date().toISOString();
+      saveAll(); renderAll();
+      el('trQty').value=''; el('trNote').value=''; return;
+    }
+    // else push new
+    transactions.push({ id: Date.now(), customerId: custId, factorId, productId: prodId, qty, type, date: new Date().toISOString(), note });
+  } else {
+    // update existing
+    const t = transactions[editingTransactionIndex];
+    t.customerId = custId; t.factorId = factorId; t.productId = prodId; t.qty = qty; t.type = type; t.note = note;
+    editingTransactionIndex = null;
+    el('btnAddTr').textContent = 'ثبت';
+    el('btnCancelEdit').style.display = 'none';
+  }
+
+  saveAll(); renderAll();
+  el('trQty').value=''; el('trNote').value='';
+};
+function startEditTransaction(i){
+  const t = transactions[i];
+  el('trCustomer').value = t.customerId || '';
+  fillFactorSelectForCustomer(Number(el('trCustomer').value), 'trFactor');
+  el('trFactor').value = t.factorId || '';
+  el('trProduct').value = t.productId || '';
+  el('trQty').value = t.qty;
+  el('trType').value = t.type;
+  el('trNote').value = t.note || '';
+  editingTransactionIndex = i;
+  el('btnAddTr').textContent = 'ذخیره تغییرات';
+  el('btnCancelEdit').style.display = 'inline-block';
+}
+el('btnCancelEdit').onclick = ()=>{
+  editingTransactionIndex = null;
+  el('btnAddTr').textContent = 'ثبت';
+  el('btnCancelEdit').style.display = 'none';
+  el('trQty').value=''; el('trNote').value='';
+};
+function deleteTransaction(i){
+  if(!confirm('آیا این تراکنش حذف شود؟')) return;
+  transactions.splice(i,1);
+  saveAll(); renderAll();
+}
+
+/* ===== INVOICE SUMMARY (aggregate by factor + code) ===== */
+function computeInvoiceSummary(customerId, factorId=null){
+  const map = new Map();
+  transactions.forEach(t=>{
+    if(t.customerId != customerId) return;
+    if(factorId && t.factorId != factorId) return;
+    const invoiceName = factors.find(f=>f.id==t.factorId)?.name || t.factorName || '';
+    const code = (t.productId && products.find(p=>p.id===t.productId)?.code) || t.productCode || '';
+    const brand = products.find(p=>p.code===code)?.brand || '';
+    const key = invoiceName + '||' + code;
+    const delta = (t.type==='OUT') ? -Number(t.qty) : Number(t.qty);
+    if(!map.has(key)) map.set(key, { invoice: invoiceName, code, brand, qty:0 });
+    map.get(key).qty += delta;
+  });
+  return Array.from(map.values()).filter(r=>r.code);
+}
+function renderInvoiceForCustomer(customerId, factorId=null){
+  const cust = customers.find(c=>c.id==customerId) || {};
+  el('invCustName').textContent = cust.name || '';
+  const summary = computeInvoiceSummary(customerId, factorId);
+  const tbodyS = el('tblInvSummary').querySelector('tbody');
+  if(!summary.length) tbodyS.innerHTML = '<tr><td colspan="5" class="muted">موجودی ثبت نشده است.</td></tr>';
+  else tbodyS.innerHTML = summary.map((s,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(s.invoice)}</td><td>${escapeHtml(s.code)}</td><td>${escapeHtml(s.brand)}</td><td>${s.qty}</td></tr>`).join('');
+
+  const list = transactions.filter(t=>t.customerId==customerId && (factorId ? t.factorId==factorId : true)).sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const tbodyT = el('tblInvTransactions').querySelector('tbody');
+  if(!list.length) tbodyT.innerHTML = '<tr><td colspan="7" class="muted">تراکنشی وجود ندارد.</td></tr>';
+  else tbodyT.innerHTML = list.map((t,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(factors.find(f=>f.id==t.factorId)?.name || t.factorName || '')}</td><td>${formatDate(t.date)}</td><td>${t.type}</td><td>${escapeHtml(products.find(p=>p.id==t.productId)?.code || t.productCode || '')}</td><td>${t.qty}</td><td>${escapeHtml(t.note||'')}</td></tr>`).join('');
+}
+
+/* ===== HELPERS: selectors behavior ===== */
+el('trCustomer').onchange = ()=> {
+  const custId = Number(el('trCustomer').value) || null;
+  fillFactorSelectForCustomer(custId, 'trFactor');
+};
+el('invCustomer').onchange = ()=> {
+  renderInvFactorOptions();
+  const cId = Number(el('invCustomer').value) || null;
+  const fId = Number(el('invFactor').value) || null;
+  if(cId) renderInvoiceForCustomer(cId, fId);
+  else { el('tblInvSummary').querySelector('tbody').innerHTML=''; el('tblInvTransactions').querySelector('tbody').innerHTML=''; el('invCustName').textContent=''; }
+};
+el('invFactor').onchange = ()=> {
+  const cId = Number(el('invCustomer').value) || null;
+  const fId = Number(el('invFactor').value) || null;
+  if(cId) renderInvoiceForCustomer(cId, fId);
+};
+el('btnRefreshInv').onclick = ()=> {
+  const cId = Number(el('invCustomer').value) || null;
+  const fId = Number(el('invFactor').value) || null;
+  if(cId) renderInvoiceForCustomer(cId, fId);
+};
+
+/* ===== BACKUP / UPLOAD ===== */
+function backup(){
+  const data = { customers, products, factors, transactions };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'mdf_backup.json'; a.click();
+}
+function triggerUpload(){
+  const fi = el('fileInput'); fi.value = '';
+  fi.onchange = async (e)=>{
+    const f = e.target.files[0];
+    if(!f) return;
+    try{
+      const txt = await f.text();
+      const data = JSON.parse(txt);
+      if(!data || typeof data !== 'object'){ alert('فایل نامعتبر است'); return; }
+      if(!confirm('آیا از بازنویسی داده‌ها با محتوای فایل بکاپ مطمئن هستید؟ (این عمل غیرقابل بازگشت است)')) return;
+      if(Array.isArray(data.customers)) customers = data.customers;
+      if(Array.isArray(data.products)) products = data.products;
+      if(Array.isArray(data.factors)) factors = data.factors;
+      if(Array.isArray(data.transactions)) transactions = data.transactions;
+      saveAll(); renderAll(); alert('بازیابی انجام شد.');
+    }catch(err){ alert('خطا در خواندن فایل: '+(err.message||err)); }
+  };
+  fi.click();
+}
+window.triggerUpload = triggerUpload;
+
+/* ===== RENDER ALL & BOOT ===== */
+function renderAll(){
+  fillCustomerSelects();
+  fillProductSelect();
+  renderCustomers();
+  renderProducts();
+  renderFactors();
+  renderTransactions();
+  renderReport();
+  renderInvFactorOptions();
+  const cId = Number(el('invCustomer').value) || null;
+  const fId = Number(el('invFactor').value) || null;
+  if(cId) renderInvoiceForCustomer(cId, fId);
+}
+renderAll();
+showTab('customers');
+
+/* ===== TABS ===== */
+function showTab(id){
+  ['customers','products','factors','transactions','invoice','report'].forEach(tab=>{
+    const elTab = document.getElementById(tab);
+    if(elTab) elTab.style.display = (tab===id ? 'block' : 'none');
+  });
+  renderAll();
+}
+</script>
+</body>
+</html>
